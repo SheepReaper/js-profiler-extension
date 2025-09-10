@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Page Performance Profiler Icon">
+  <title>Page Performance Profiler</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3AA3FF"/>
+      <stop offset="100%" stop-color="#16C7B7"/>
+    </linearGradient>
+    <linearGradient id="needle" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FF5A5F"/>
+      <stop offset="100%" stop-color="#FF2D55"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset dy="1" result="off"/>
+      <feMerge>
+        <feMergeNode in="off"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Rounded-square background -->
+  <rect x="6" y="6" width="116" height="116" rx="24" fill="url(#bg)"/>
+
+  <!-- Page/document shape with subtle shadow -->
+  <g filter="url(#soft)">
+    <path d="M38 28h40l12 12v44c0 6.627-5.373 12-12 12H38c-6.627 0-12-5.373-12-12V40c0-6.627 5.373-12 12-12z"
+          fill="#FFFFFF" opacity="0.98"/>
+    <!-- Page fold -->
+    <path d="M78 28v10c0 6.627 5.373 12 12 12h10L78 28z" fill="#EAF3FF"/>
+  </g>
+
+  <!-- Tiny page UI lines (for context at small sizes) -->
+  <rect x="34" y="48" width="36" height="6" rx="3" fill="#C8D9F2"/>
+  <rect x="34" y="60" width="24" height="6" rx="3" fill="#D6E3F7"/>
+  <rect x="34" y="72" width="30" height="6" rx="3" fill="#D6E3F7"/>
+
+  <!-- Speedometer dial (overlapping the page bottom) -->
+  <g transform="translate(28,62)">
+    <!-- Dial arc background -->
+    <path d="M36 44a28 28 0 1 0 56 0h-8a20 20 0 1 1-40 0h-8z" fill="rgba(0,0,0,0.06)"/>
+    <!-- Dial ring -->
+    <circle cx="64" cy="44" r="28" fill="#FFFFFF" opacity="0.95"/>
+    <circle cx="64" cy="44" r="24" fill="#F4F7FB"/>
+
+    <!-- Tick marks -->
+    <g transform="translate(64,44)">
+      <!-- 7 ticks -->
+      <g stroke="#B7C6E3" stroke-width="2" stroke-linecap="round">
+        <line x1="0" y1="-22" x2="0" y2="-18"/>
+        <g transform="rotate(30)"><line x1="0" y1="-22" x2="0" y2="-18"/></g>
+        <g transform="rotate(60)"><line x1="0" y1="-22" x2="0" y2="-18"/></g>
+        <g transform="rotate(90)"><line x1="0" y1="-22" x2="0" y2="-18"/></g>
+        <g transform="rotate(120)"><line x1="0" y1="-22" x2="0" y2="-18"/></g>
+        <g transform="rotate(150)"><line x1="0" y1="-22" x2="0" y2="-18"/></g>
+        <g transform="rotate(180)"><line x1="0" y1="-22" x2="0" y2="-18"/></g>
+      </g>
+
+      <!-- Needle -->
+      <g transform="rotate(-35)">
+        <polygon points="0,-2 0,2 18,0" fill="url(#needle)"/>
+        <circle cx="0" cy="0" r="3.5" fill="#FF2D55"/>
+      </g>
+    </g>
+
+    <!-- Baseline "OK/Good" segments -->
+    <path d="M64 20
+             A24 24 0 0 1 84.8 30.2" fill="none" stroke="#41D697" stroke-width="4" stroke-linecap="round"/>
+    <path d="M84.8 30.2
+             A24 24 0 0 1 88 44" fill="none" stroke="#FFD166" stroke-width="4" stroke-linecap="round"/>
+    <path d="M88 44
+             A24 24 0 0 1 64 68" fill="none" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Sparkline/metrics overlay to suggest “profiling” -->
+  <polyline points="30,96 42,88 52,92 64,82 74,86 86,74 98,78 110,68"
+            fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+  <circle cx="110" cy="68" r="3.5" fill="#FFFFFF" opacity="0.95"/>
+
+</svg>
