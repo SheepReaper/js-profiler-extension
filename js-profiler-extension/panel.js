@@ -1,4 +1,115 @@
 // Fetch and render memory usage chart
+// Fetch and render event loop lag chart
+function renderEventLoopLagChart() {
+  let didRespond = false;
+  const timeout = setTimeout(() => {
+    if (!didRespond) {
+      document.getElementById('eventloop') && (document.getElementById('eventloop').innerHTML = '<div class="has-text-danger">Failed to fetch event loop lag data (timeout or port closed).</div>');
+    }
+  }, 1200);
+  function tryGetEventLoopLags(retry) {
+    chrome.tabs.sendMessage(
+      chrome.devtools.inspectedWindow.tabId,
+      { type: 'getEventLoopLags' },
+      (lags) => {
+        didRespond = true;
+        clearTimeout(timeout);
+        if (chrome.runtime.lastError) {
+          if (!retry && chrome.runtime.lastError.message && chrome.runtime.lastError.message.includes('Could not establish connection')) {
+            chrome.scripting.executeScript({
+              target: { tabId: chrome.devtools.inspectedWindow.tabId },
+              files: ['loader.js']
+            }, () => {
+              setTimeout(() => tryGetEventLoopLags(true), 300);
+            });
+            return;
+          }
+          document.getElementById('eventloop') && (document.getElementById('eventloop').innerHTML = `<div class="has-text-danger">Error: ${chrome.runtime.lastError.message || 'Message port closed or extension context lost.'}</div>`);
+          return;
+        }
+        if (!lags || !lags.length) {
+          document.getElementById('eventloop') && (document.getElementById('eventloop').innerHTML = '<div class="has-text-grey">No event loop lag data available.</div>');
+          return;
+        }
+        // Prepare data
+        const minTime = Math.min(...lags.map(s => s.timestamp));
+        const maxTime = Math.max(...lags.map(s => s.timestamp));
+        const minLag = Math.min(...lags.map(s => s.lag));
+        const maxLag = Math.max(...lags.map(s => s.lag));
+        const width = 320, height = 100, pad = 24;
+        // SVG line chart
+        let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+        svg += '<polyline fill="none" stroke="#43a047" stroke-width="2" points="';
+        for (let i = 0; i < lags.length; ++i) {
+          const x = pad + (width - 2 * pad) * (lags[i].timestamp - minTime) / (maxTime - minTime || 1);
+          const y = height - pad - (height - 2 * pad) * (lags[i].lag - minLag) / (maxLag - minLag || 1);
+          svg += `${x},${y} `;
+        }
+        svg += '"/>';
+        svg += '</svg>';
+        let html = `<h4 class="title is-6 mt-5 mb-2">Event Loop Lag</h4><div class="box" style="max-width:340px;margin:0 auto 24px auto;">${svg}<div style="font-size:12px;text-align:center;margin-top:8px;">Lag (ms): ${minLag.toFixed(2)} - ${maxLag.toFixed(2)}</div></div>`;
+        document.getElementById('eventloop') ? document.getElementById('eventloop').innerHTML = html : (document.getElementById('cpu').insertAdjacentHTML('afterend', `<div id="eventloop">${html}</div>`));
+      }
+    );
+  }
+  tryGetEventLoopLags(false);
+}
+
+// Fetch and render frame rendering chart
+function renderFrameTimesChart() {
+  let didRespond = false;
+  const timeout = setTimeout(() => {
+    if (!didRespond) {
+      document.getElementById('frames') && (document.getElementById('frames').innerHTML = '<div class="has-text-danger">Failed to fetch frame rendering data (timeout or port closed).</div>');
+    }
+  }, 1200);
+  function tryGetFrameTimes(retry) {
+    chrome.tabs.sendMessage(
+      chrome.devtools.inspectedWindow.tabId,
+      { type: 'getFrameTimes' },
+      (frames) => {
+        didRespond = true;
+        clearTimeout(timeout);
+        if (chrome.runtime.lastError) {
+          if (!retry && chrome.runtime.lastError.message && chrome.runtime.lastError.message.includes('Could not establish connection')) {
+            chrome.scripting.executeScript({
+              target: { tabId: chrome.devtools.inspectedWindow.tabId },
+              files: ['loader.js']
+            }, () => {
+              setTimeout(() => tryGetFrameTimes(true), 300);
+            });
+            return;
+          }
+          document.getElementById('frames') && (document.getElementById('frames').innerHTML = `<div class="has-text-danger">Error: ${chrome.runtime.lastError.message || 'Message port closed or extension context lost.'}</div>`);
+          return;
+        }
+        if (!frames || !frames.length) {
+          document.getElementById('frames') && (document.getElementById('frames').innerHTML = '<div class="has-text-grey">No frame rendering data available.</div>');
+          return;
+        }
+        // Prepare data
+        const minTime = Math.min(...frames.map(s => s.timestamp));
+        const maxTime = Math.max(...frames.map(s => s.timestamp));
+        const minFrame = Math.min(...frames.map(s => s.frameTime));
+        const maxFrame = Math.max(...frames.map(s => s.frameTime));
+        const width = 320, height = 100, pad = 24;
+        // SVG line chart
+        let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+        svg += '<polyline fill="none" stroke="#ff9800" stroke-width="2" points="';
+        for (let i = 0; i < frames.length; ++i) {
+          const x = pad + (width - 2 * pad) * (frames[i].timestamp - minTime) / (maxTime - minTime || 1);
+          const y = height - pad - (height - 2 * pad) * (frames[i].frameTime - minFrame) / (maxFrame - minFrame || 1);
+          svg += `${x},${y} `;
+        }
+        svg += '"/>';
+        svg += '</svg>';
+        let html = `<h4 class="title is-6 mt-5 mb-2">Frame Rendering Times</h4><div class="box" style="max-width:340px;margin:0 auto 24px auto;">${svg}<div style="font-size:12px;text-align:center;margin-top:8px;">Frame Time (ms): ${minFrame.toFixed(2)} - ${maxFrame.toFixed(2)}</div></div>`;
+        document.getElementById('frames') ? document.getElementById('frames').innerHTML = html : (document.getElementById('cpu').insertAdjacentHTML('afterend', `<div id="frames">${html}</div>`));
+      }
+    );
+  }
+  tryGetFrameTimes(false);
+}
 function renderMemoryChart() {
   let didRespond = false;
   // Set a timeout in case the message port closes or no response is received
@@ -262,6 +373,9 @@ document.getElementById('profiler-tabs').onclick = function (e) {
 };
 
 // Auto-refresh on load, default to Table tab
+// Render new metrics on load
+renderEventLoopLagChart();
+renderFrameTimesChart();
 setActiveTab('table');
 
 document.getElementById('refresh').onclick = async () => {
@@ -275,6 +389,9 @@ document.getElementById('refresh').onclick = async () => {
       renderProfilerData(result);
     }
   );
+  renderMemoryChart();
+  renderEventLoopLagChart();
+  renderFrameTimesChart();
 };
 
 // Auto-refresh on load

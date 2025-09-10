@@ -3,6 +3,8 @@
   window.__jsProfiler = {
     timings: [],
     memorySamples: [],
+    eventLoopLags: [],
+    frameTimes: [],
     record: function (fn, name) {
       return function (...args) {
         const start = performance.now();
@@ -31,6 +33,32 @@
       };
     }
   };
+  // Event loop lag sampling
+  (function eventLoopLagSampler() {
+    let last = performance.now();
+    function check() {
+      const now = performance.now();
+      const lag = now - last - 50;
+      window.__jsProfiler.eventLoopLags.push({ timestamp: Date.now(), lag: lag > 0 ? lag : 0 });
+      last = now;
+      setTimeout(check, 50);
+    }
+    setTimeout(check, 50);
+  })();
+
+  // Frame rendering sampling
+  (function frameTimeSampler() {
+    let last = performance.now();
+    function frame(now) {
+      const dt = now - last;
+      if (last !== 0) {
+        window.__jsProfiler.frameTimes.push({ timestamp: Date.now(), frameTime: dt });
+      }
+      last = now;
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  })();
 
   // Periodic memory sampling
   if (performance.memory) {
@@ -67,7 +95,7 @@
   XMLHttpRequest.prototype.open = window.__jsProfiler.record(origXHROpen, 'xhr.open');
   const origXHRSend = XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.send = window.__jsProfiler.record(origXHRSend, 'xhr.send');
-  // Listen for getTimings and getMemory requests from loader.js
+  // Listen for getTimings, getMemory, getEventLoopLags, getFrameTimes requests from loader.js
   window.addEventListener('message', function (event) {
     if (event.source !== window) return;
     if (event.data && event.data.type === 'JS_PROFILER_GET_TIMINGS') {
@@ -82,6 +110,20 @@
         type: 'JS_PROFILER_MEMORY_RESPONSE',
         reqId: event.data.reqId,
         memorySamples: window.__jsProfiler.memorySamples || []
+      }, '*');
+    }
+    if (event.data && event.data.type === 'JS_PROFILER_GET_EVENT_LOOP_LAGS') {
+      window.postMessage({
+        type: 'JS_PROFILER_EVENT_LOOP_LAGS_RESPONSE',
+        reqId: event.data.reqId,
+        eventLoopLags: window.__jsProfiler.eventLoopLags || []
+      }, '*');
+    }
+    if (event.data && event.data.type === 'JS_PROFILER_GET_FRAME_TIMES') {
+      window.postMessage({
+        type: 'JS_PROFILER_FRAME_TIMES_RESPONSE',
+        reqId: event.data.reqId,
+        frameTimes: window.__jsProfiler.frameTimes || []
       }, '*');
     }
   });

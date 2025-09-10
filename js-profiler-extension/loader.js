@@ -36,5 +36,31 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     window.postMessage({ type: 'JS_PROFILER_GET_MEMORY', reqId }, '*');
     return true;
   }
+  if (msg && msg.type === 'getEventLoopLags') {
+    const reqId = Math.random().toString(36).slice(2);
+    function handleLagResponse(event) {
+      if (event.source !== window) return;
+      if (event.data && event.data.type === 'JS_PROFILER_EVENT_LOOP_LAGS_RESPONSE' && event.data.reqId === reqId) {
+        window.removeEventListener('message', handleLagResponse);
+        sendResponse(event.data.eventLoopLags);
+      }
+    }
+    window.addEventListener('message', handleLagResponse);
+    window.postMessage({ type: 'JS_PROFILER_GET_EVENT_LOOP_LAGS', reqId }, '*');
+    return true;
+  }
+  if (msg && msg.type === 'getFrameTimes') {
+    const reqId = Math.random().toString(36).slice(2);
+    function handleFrameResponse(event) {
+      if (event.source !== window) return;
+      if (event.data && event.data.type === 'JS_PROFILER_FRAME_TIMES_RESPONSE' && event.data.reqId === reqId) {
+        window.removeEventListener('message', handleFrameResponse);
+        sendResponse(event.data.frameTimes);
+      }
+    }
+    window.addEventListener('message', handleFrameResponse);
+    window.postMessage({ type: 'JS_PROFILER_GET_FRAME_TIMES', reqId }, '*');
+    return true;
+  }
   return false;
 });

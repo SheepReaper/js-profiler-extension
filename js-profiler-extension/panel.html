@@ -45,7 +45,15 @@
           <li data-tab="cpu"><a>CPU</a></li>
           <li data-tab="memory"><a>Memory</a></li>
           <li data-tab="timeline"><a>Timeline</a></li>
+          <li data-tab="eventloop"><a>Event Loop</a></li>
+          <li data-tab="frames"><a>Frames</a></li>
           <li data-tab="stacks"><a>Stack Traces</a></li>
+          <div id="tab-content-eventloop" class="profiler-tab-content" style="display:none">
+            <div id="eventloop"></div>
+          </div>
+          <div id="tab-content-frames" class="profiler-tab-content" style="display:none">
+            <div id="frames"></div>
+          </div>
         </ul>
       </div>
       <div id="tab-content-table" class="profiler-tab-content">
