@@ -3,15 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <title>JS Profiler</title>
+  <link rel="stylesheet" href="css/bulma/css/bulma.min.css">
   <style>
-    body { font-family: sans-serif; min-width: 200px; }
     #profile { font-size: 12px; }
+    body { min-width: 220px; }
   </style>
 </head>
 <body>
-  <h3>JS Profiler</h3>
-  <button id="show">Show Timings</button>
-  <pre id="profile"></pre>
+  <section class="section py-3">
+    <div class="container">
+      <h3 class="title is-5 has-text-link mb-2">JS Profiler</h3>
+      <button id="show" class="button is-link is-light mb-3">Show Timings</button>
+      <div id="profile" class="box p-2" style="overflow-x:auto;"></div>
+    </div>
+  </section>
   <script src="popup.js"></script>
 </body>
 </html>

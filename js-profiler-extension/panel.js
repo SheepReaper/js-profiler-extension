@@ -30,26 +30,26 @@ function renderProfilerData(timings) {
     const avg = (durations.reduce((a, b) => a + b, 0) / count).toFixed(2);
     return { name, count, min, max, avg };
   });
-  // Table with clickable rows
-  let tableHtml = '<table><tr><th>Function</th><th>Count</th><th>Min (ms)</th><th>Max (ms)</th><th>Avg (ms)</th></tr>';
+  // Table with clickable rows (Bulma)
+  let tableHtml = '<table class="table is-striped is-hoverable is-fullwidth"><thead><tr><th>Function</th><th>Count</th><th>Min (ms)</th><th>Max (ms)</th><th>Avg (ms)</th></tr></thead><tbody>';
   for (const s of stats) {
     tableHtml += `<tr class="fn-row" data-fn="${encodeURIComponent(s.name)}" style="cursor:pointer;${selectedFunction===s.name?'background:#e3f2fd;':''}"><td>${s.name}</td><td>${s.count}</td><td>${s.min}</td><td>${s.max}</td><td>${s.avg}</td></tr>`;
   }
-  tableHtml += '</table>';
+  tableHtml += '</tbody></table>';
   document.getElementById('table').innerHTML = tableHtml;
-  // Bar chart
+  // Bar chart (Bulma)
   const maxCount = Math.max(...stats.map(s => s.count));
-  let barHtml = '<h4>Call Frequency</h4>';
+  let barHtml = '<h4 class="title is-6 mt-5 mb-2">Call Frequency</h4>';
   for (const s of stats) {
     const barWidth = (s.count / maxCount * 100);
-    barHtml += `<div style="font-size:12px;margin-bottom:2px;">${s.name} (${s.count}) <span class="bar" style="width:${barWidth}%"></span></div>`;
+    barHtml += `<div class="mb-1" style="font-size:12px;">${s.name} <span class="tag is-light is-info ml-1">${s.count}</span> <span class="bar" style="width:${barWidth}%"></span></div>`;
   }
   document.getElementById('barchart').innerHTML = barHtml;
-  // Timeline
+  // Timeline (Bulma heading)
   const minTime = Math.min(...timings.map(t => t.timestamp));
   const maxTime = Math.max(...timings.map(t => t.timestamp + t.duration));
   const totalSpan = maxTime - minTime || 1;
-  let timelineHtml = '<h4>Timeline</h4>';
+  let timelineHtml = '<h4 class="title is-6 mt-5 mb-2">Timeline</h4>';
   timelineHtml += '<div class="timeline">';
   for (const t of timings) {
     const left = ((t.timestamp - minTime) / totalSpan) * 100;
@@ -83,15 +83,15 @@ function renderProfilerData(timings) {
 function showStackTraces(fnName) {
   const traces = lastTimings.filter(t => t.name === fnName && t.stack).map(t => t.stack);
   const uniqueTraces = Array.from(new Set(traces));
-  let html = `<h4>Stack Traces for <span style="color:#1976d2">${fnName}</span></h4>`;
+  let html = `<h4 class="title is-6">Stack Traces for <span class="has-text-link">${fnName}</span></h4>`;
   if (!uniqueTraces.length) {
-    html += '<div style="color:#888">No stack traces available.</div>';
+    html += '<div class="has-text-grey">No stack traces available.</div>';
   } else {
-    html += '<div style="max-height:200px;overflow:auto;background:#f8f8f8;border:1px solid #eee;padding:8px 12px;font-size:12px;">';
+    html += '<div class="box" style="max-height:200px;overflow:auto;font-size:12px;">';
     for (const stack of uniqueTraces.slice(0, 10)) {
-      html += `<pre style="margin:0 0 8px 0;">${stack}</pre>`;
+      html += `<pre class="mb-2">${stack}</pre>`;
     }
-    if (uniqueTraces.length > 10) html += `<div style="color:#888">...and ${uniqueTraces.length-10} more</div>`;
+    if (uniqueTraces.length > 10) html += `<div class="has-text-grey">...and ${uniqueTraces.length-10} more</div>`;
     html += '</div>';
   }
   document.getElementById('output').innerHTML = html;
