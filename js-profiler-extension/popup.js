@@ -44,7 +44,7 @@ document.getElementById('show').onclick = async () => {
     for (const t of timings) {
       const left = ((t.timestamp - minTime) / totalSpan) * 100;
       const width = (t.duration / totalSpan) * 100;
-      html += `<div title="${t.name} (${t.duration.toFixed(2)}ms)" style="position:absolute;top:${5 + (Math.random()*100)}px;left:${left}%;width:${Math.max(width,0.5)}%;height:8px;background:#2196f3;border-radius:2px;"></div>`;
+      html += `<div title="${t.name} (${t.duration.toFixed(2)}ms)" style="position:absolute;top:${5 + (Math.random() * 100)}px;left:${left}%;width:${Math.max(width, 0.5)}%;height:8px;background:#2196f3;border-radius:2px;"></div>`;
     }
     html += '</div>';
     document.getElementById('profile').innerHTML = html;
