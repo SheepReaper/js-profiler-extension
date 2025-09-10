@@ -7,51 +7,68 @@ function renderMemoryChart() {
       document.getElementById('memory') && (document.getElementById('memory').innerHTML = '<div class="has-text-danger">Failed to fetch memory data (timeout or port closed).</div>');
     }
   }, 1200);
-  chrome.runtime.sendMessage({ type: 'getMemorySamples' }, (samples) => {
-    didRespond = true;
-    clearTimeout(timeout);
-    if (chrome.runtime.lastError) {
-      document.getElementById('memory') && (document.getElementById('memory').innerHTML = `<div class="has-text-danger">Error: ${chrome.runtime.lastError.message || 'Message port closed or extension context lost.'}</div>`);
-      return;
-    }
-    if (!samples || !samples.length) {
-      document.getElementById('memory') && (document.getElementById('memory').innerHTML = '<div class="has-text-grey">No memory data available.</div>');
-      return;
-    }
-    // Prepare data
-    const minTime = Math.min(...samples.map(s => s.timestamp));
-    const maxTime = Math.max(...samples.map(s => s.timestamp));
-    const minUsed = Math.min(...samples.map(s => s.used));
-    const maxUsed = Math.max(...samples.map(s => s.used));
-    const width = 320, height = 100, pad = 24;
-    // Detect GC events (drop > 5% of max)
-    let last = samples[0].used;
-    const gcEvents = [];
-    for (let i = 1; i < samples.length; ++i) {
-      if (last - samples[i].used > 0.05 * maxUsed) {
-        gcEvents.push(i);
+  function tryGetMemorySamples(retry) {
+    chrome.tabs.sendMessage(
+      chrome.devtools.inspectedWindow.tabId,
+      { type: 'getMemorySamples' },
+      (samples) => {
+        didRespond = true;
+        clearTimeout(timeout);
+        if (chrome.runtime.lastError) {
+          // If the error is connection, try to inject loader.js and retry once
+          if (!retry && chrome.runtime.lastError.message && chrome.runtime.lastError.message.includes('Could not establish connection')) {
+            chrome.scripting.executeScript({
+              target: { tabId: chrome.devtools.inspectedWindow.tabId },
+              files: ['loader.js']
+            }, () => {
+              setTimeout(() => tryGetMemorySamples(true), 300);
+            });
+            return;
+          }
+          document.getElementById('memory') && (document.getElementById('memory').innerHTML = `<div class="has-text-danger">Error: ${chrome.runtime.lastError.message || 'Message port closed or extension context lost.'}</div>`);
+          return;
+        }
+        if (!samples || !samples.length) {
+          document.getElementById('memory') && (document.getElementById('memory').innerHTML = '<div class="has-text-grey">No memory data available.</div>');
+          return;
+        }
+        // Prepare data
+        const minTime = Math.min(...samples.map(s => s.timestamp));
+        const maxTime = Math.max(...samples.map(s => s.timestamp));
+        const minUsed = Math.min(...samples.map(s => s.used));
+        const maxUsed = Math.max(...samples.map(s => s.used));
+        const width = 320, height = 100, pad = 24;
+        // Detect GC events (drop > 5% of max)
+        let last = samples[0].used;
+        const gcEvents = [];
+        for (let i = 1; i < samples.length; ++i) {
+          if (last - samples[i].used > 0.05 * maxUsed) {
+            gcEvents.push(i);
+          }
+          last = samples[i].used;
+        }
+        // SVG line chart
+        let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+        // Memory line
+        svg += '<polyline fill="none" stroke="#1976d2" stroke-width="2" points="';
+        for (let i = 0; i < samples.length; ++i) {
+          const x = pad + (width - 2 * pad) * (samples[i].timestamp - minTime) / (maxTime - minTime || 1);
+          const y = height - pad - (height - 2 * pad) * (samples[i].used - minUsed) / (maxUsed - minUsed || 1);
+          svg += `${x},${y} `;
+        }
+        svg += '"/>';
+        // GC event markers
+        for (const i of gcEvents) {
+          const x = pad + (width - 2 * pad) * (samples[i].timestamp - minTime) / (maxTime - minTime || 1);
+          svg += `<rect x="${x - 2}" y="${height - pad - 40}" width="4" height="40" fill="#e53935" opacity="0.5"><title>GC event</title></rect>`;
+        }
+        svg += '</svg>';
+        let html = `<h4 class="title is-6 mt-5 mb-2">Memory Usage</h4><div class="box" style="max-width:340px;margin:0 auto 24px auto;">${svg}<div style="font-size:12px;text-align:center;margin-top:8px;">Heap Used (MB): ${(minUsed / 1048576).toFixed(1)} - ${(maxUsed / 1048576).toFixed(1)}</div></div>`;
+        document.getElementById('memory') ? document.getElementById('memory').innerHTML = html : (document.getElementById('cpu').insertAdjacentHTML('afterend', `<div id="memory">${html}</div>`));
       }
-      last = samples[i].used;
-    }
-    // SVG line chart
-    let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
-    // Memory line
-    svg += '<polyline fill="none" stroke="#1976d2" stroke-width="2" points="';
-    for (let i = 0; i < samples.length; ++i) {
-      const x = pad + (width - 2 * pad) * (samples[i].timestamp - minTime) / (maxTime - minTime || 1);
-      const y = height - pad - (height - 2 * pad) * (samples[i].used - minUsed) / (maxUsed - minUsed || 1);
-      svg += `${x},${y} `;
-    }
-    svg += '"/>';
-    // GC event markers
-    for (const i of gcEvents) {
-      const x = pad + (width - 2 * pad) * (samples[i].timestamp - minTime) / (maxTime - minTime || 1);
-      svg += `<rect x="${x - 2}" y="${height - pad - 40}" width="4" height="40" fill="#e53935" opacity="0.5"><title>GC event</title></rect>`;
-    }
-    svg += '</svg>';
-    let html = `<h4 class="title is-6 mt-5 mb-2">Memory Usage</h4><div class="box" style="max-width:340px;margin:0 auto 24px auto;">${svg}<div style="font-size:12px;text-align:center;margin-top:8px;">Heap Used (MB): ${(minUsed / 1048576).toFixed(1)} - ${(maxUsed / 1048576).toFixed(1)}</div></div>`;
-    document.getElementById('memory') ? document.getElementById('memory').innerHTML = html : (document.getElementById('cpu').insertAdjacentHTML('afterend', `<div id="memory">${html}</div>`));
-  });
+    );
+  }
+  tryGetMemorySamples(false);
 }
 // Call memory chart rendering after timings are rendered
 // Panel script: fetches and displays profiling data in DevTools
