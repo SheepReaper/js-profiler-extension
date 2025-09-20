@@ -29,11 +29,11 @@
     "url": "https://github.com/jgthms/bulma/issues"
   },
   "devDependencies": {
-    "cssnano": "^7.0.6",
-    "postcss-cli": "^11.0.1",
-    "prettier": "^3.5.3",
-    "rimraf": "^6.0.1",
-    "sass": "^1.86.3"
+    "cssnano": "7.1.1",
+    "postcss-cli": "11.0.1",
+    "prettier": "3.6.2",
+    "rimraf": "6.0.1",
+    "sass": "1.93.0"
   },
   "scripts": {
     "build-bulma": "sass --style=expanded --source-map bulma.scss css/bulma.css",
